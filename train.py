@@ -18,7 +18,7 @@ import sys
 from pytorchtools import EarlyStopping
 from sklearn.model_selection import train_test_split
 from data_parallel import BalancedDataParallel
-from transformers import GPT2TokenizerFast, GPT2LMHeadModel, GPT2Config
+from transformers import GPT2TokenizerFast, GPT2LMHeadModel, GPT2Config, BertTokenizer
 from transformers import BertTokenizerFast
 import pandas as pd
 import torch.nn.utils.rnn as rnn_utils
@@ -30,11 +30,11 @@ def set_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', default='3', type=str, required=False, help='设置使用哪些显卡')
     parser.add_argument('--no_cuda', action='store_true', help='不使用GPU进行训练')
-    parser.add_argument('--vocab_path', default='vocab/vocab.txt', type=str, required=False,
+    parser.add_argument('--vocab_path', default='/opt/xiankai/GPT2-chitchat-from-xkgit/model/pre_train_model/gpt2_base/vocab.txt', type=str, required=False,
                         help='词表路径')
     parser.add_argument('--model_config', default='config/config.json', type=str, required=False,
                         help='设置模型参数')
-    parser.add_argument('--train_path', default='data/train.pkl', type=str, required=False, help='训练集路径')
+    parser.add_argument('--train_path', default='/opt/xiankai/GPT2-chitchat-from-xkgit/data/train.pkl', type=str, required=False, help='训练集路径')
     parser.add_argument('--max_len', default=150, type=int, required=False, help='训练时，输入数据的最大长度')
 
     parser.add_argument('--log_path', default='data/train.log', type=str, required=False, help='训练日志存放位置')
@@ -49,9 +49,9 @@ def set_args():
     parser.add_argument('--log_step', default=1, type=int, required=False, help='多少步汇报一次loss')
     parser.add_argument('--gradient_accumulation_steps', default=4, type=int, required=False, help='梯度积累')
     parser.add_argument('--max_grad_norm', default=2.0, type=float, required=False)
-    parser.add_argument('--save_model_path', default='model', type=str, required=False,
+    parser.add_argument('--save_model_path', default='model/self_trained/trained_01', type=str, required=False,
                         help='模型输出路径')
-    parser.add_argument('--pretrained_model', default='', type=str, required=False,
+    parser.add_argument('--pretrained_model', default='/opt/xiankai/GPT2-chitchat-from-xkgit/model/pre_train_model/gpt2_base', type=str, required=False,
                         help='预训练的模型的路径')
     # parser.add_argument('--seed', type=int, default=None, help='设置种子用于生成随机数，以使得训练的结果是确定的')
     parser.add_argument('--num_workers', type=int, default=0, help="dataloader加载数据时使用的线程数量")
@@ -121,7 +121,12 @@ def load_dataset(logger, args):
     """
     logger.info("loading training dataset and validating dataset")
     train_path = args.train_path
-
+    # with open(args.train_path, "r", encoding="utf8") as f:
+    #     data = f.read()
+    # data_list = data.split("\n")
+    # train_list, test_list = train_test_split(data_list, test_size=0.2, random_state=1)
+    # train_dataset = MyDataset(train_list)
+    # train_dataset = MyDataset(train_list)
     with open(train_path, "rb") as f:
         input_list = pickle.load(f)
 
@@ -381,7 +386,7 @@ def main():
     logger.info('using device:{}'.format(device))
 
     # 初始化tokenizer
-    tokenizer = BertTokenizerFast(vocab_file=args.vocab_path, sep_token="[SEP]", pad_token="[PAD]", cls_token="[CLS]")
+    tokenizer = BertTokenizer(vocab_file=args.vocab_path, sep_token="[SEP]", pad_token="[PAD]", cls_token="[CLS]")
     args.sep_id = tokenizer.sep_token_id
     args.pad_id = tokenizer.pad_token_id
     args.cls_id = tokenizer.cls_token_id

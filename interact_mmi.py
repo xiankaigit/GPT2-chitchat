@@ -10,7 +10,7 @@ from datetime import datetime
 from tqdm import tqdm
 from torch.nn import DataParallel
 import logging
-from transformers.modeling_gpt2 import GPT2Config, GPT2LMHeadModel
+from transformers.models.gpt2.modeling_gpt2 import GPT2Config, GPT2LMHeadModel
 from transformers import BertTokenizer
 from os.path import join, exists
 from itertools import zip_longest, chain
@@ -18,7 +18,6 @@ from dataset import MyDataset
 from torch.utils.data import Dataset, DataLoader
 from torch.nn import CrossEntropyLoss
 from sklearn.model_selection import train_test_split
-from train_origin import create_model
 import torch.nn.functional as F
 import copy
 
@@ -39,10 +38,10 @@ def set_interact_args():
                         help='模型参数')
     parser.add_argument('--log_path', default='data/interacting_mmi.log', type=str, required=False,
                         help='interact_mmi日志存放位置')
-    parser.add_argument('--voca_path', default='vocab/vocab_small.txt', type=str, required=False, help='选择词库')
-    parser.add_argument('--dialogue_model_path', default='dialogue_model/', type=str, required=False,
+    parser.add_argument('--voca_path', default='/opt/xiankai/GPT2-chitchat-from-xkgit/model/pre_train_model/gpt2_base/vocab.txt', type=str, required=False, help='选择词库')
+    parser.add_argument('--dialogue_model_path', default='model/dialogue_model/', type=str, required=False,
                         help='dialogue_model路径')
-    parser.add_argument('--mmi_model_path', default='mmi_model/', type=str, required=False,
+    parser.add_argument('--mmi_model_path', default='model/mmi_model/', type=str, required=False,
                         help='互信息mmi_model路径')
     parser.add_argument('--save_samples_path', default="sample/", type=str, required=False, help="保存聊天记录的文件路径")
     parser.add_argument('--repetition_penalty', default=1.0, type=float, required=False,
@@ -96,7 +95,8 @@ def top_k_top_p_filtering(logits, top_k=0, top_p=0.0, filter_value=-float('Inf')
         # Remove all tokens with a probability less than the last token of the top-k
         # torch.topk()返回最后一维最大的top_k个元素，返回值为二维(values,indices)
         # ...表示其他维度由计算机自行推断
-        for logit in logits:
+        for i in range(len(logits)):
+            logit = logits[i]
             indices_to_remove = logit < torch.topk(logit, top_k)[0][..., -1, None]
             logit[indices_to_remove] = filter_value  # 对于topk之外的其他元素的logits值设为负无穷
 
@@ -167,7 +167,8 @@ def main():
                         next_token_logits[index][token_id] /= args.repetition_penalty
                 next_token_logits = next_token_logits / args.temperature
                 # 对于[UNK]的概率设为无穷小，也就是说模型的预测结果不可能是[UNK]这个token
-                for next_token_logit in next_token_logits:
+                for i in range(len(next_token_logits)):
+                    next_token_logit = next_token_logits[i]
                     next_token_logit[tokenizer.convert_tokens_to_ids('[UNK]')] = -float('Inf')
                 filtered_logits = top_k_top_p_filtering(next_token_logits, top_k=args.topk, top_p=args.topp)
                 # torch.multinomial表示从候选集合中无放回地进行抽取num_samples个元素，权重越高，抽到的几率越高，返回元素的下标
