@@ -4,3 +4,5 @@ sklearn
 tqdm
 numpy
 scipy==1.2.1
+pandas
+jieba

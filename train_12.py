@@ -28,7 +28,7 @@ from dataset import MyDataset
 
 def set_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='[0,1,2,3,4,5,6,7]', type=str, required=False, help='设置使用哪些显卡')
+    parser.add_argument('--device', default='3', type=str, required=False, help='设置使用哪些显卡')
     parser.add_argument('--no_cuda', action='store_true', help='不使用GPU进行训练')
     parser.add_argument('--vocab_path', default='/home/xk_workspace/GPT2-chitchat/model/pre_train_model/gpt2_base/vocab.txt', type=str, required=False,
                         help='词表路径')
@@ -49,7 +49,7 @@ def set_args():
     parser.add_argument('--log_step', default=1, type=int, required=False, help='多少步汇报一次loss')
     parser.add_argument('--gradient_accumulation_steps', default=4, type=int, required=False, help='梯度积累')
     parser.add_argument('--max_grad_norm', default=2.0, type=float, required=False)
-    parser.add_argument('--save_model_path', default='model/self_trained/trained_02', type=str, required=False,
+    parser.add_argument('--save_model_path', default='model/self_trained/trained_01', type=str, required=False,
                         help='模型输出路径')
     parser.add_argument('--pretrained_model', default='/home/xk_workspace/GPT2-chitchat/model/pre_train_model/gpt2_base', type=str, required=False,
                         help='预训练的模型的路径')
@@ -283,7 +283,6 @@ def train(model, logger, train_dataset, validate_dataset, args):
     scheduler = transformers.get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total
     )
-
 
     logger.info('starting training')
 
